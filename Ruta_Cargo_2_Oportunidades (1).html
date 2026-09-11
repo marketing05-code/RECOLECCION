@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ruta Cargo | Cargoweek</title>
+<style>
+  :root{
+    --navy:#071827;
+    --navy2:#0b2236;
+    --orange:#f28c28;
+    --orange2:#d97820;
+    --white:#ffffff;
+    --muted:#9fb0bf;
+    --line:rgba(255,255,255,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    padding:0;
+    background:linear-gradient(180deg,#06131f,#0b2236);
+    color:#fff;
+    font-family:Arial,Helvetica,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;
+  }
+  body{
+    min-height:100vh;
+    padding:14px;
+  }
+  .app{
+    width:min(760px,100%);
+    margin:0 auto;
+  }
+  .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  h1{
+    margin:0;
+    font-size:clamp(26px,7vw,42px);
+    letter-spacing:.4px;
+  }
+  .subtitle{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.35;
+  }
+  .stats{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .stat{
+    padding:9px 12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:rgba(255,255,255,.045);
+    font-size:14px;
+    min-width:90px;
+    text-align:center;
+  }
+  .phase-selector{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+    margin:12px 0;
+  }
+  .phase-card{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:11px 8px;
+    text-align:center;
+    background:rgba(255,255,255,.035);
+  }
+  .phase-card.active{
+    border:2px solid var(--orange);
+    background:rgba(242,140,40,.09);
+  }
+  .phase-card.locked{opacity:.45}
+  .phase-card .lock{font-size:20px}
+  .phase-card b{display:block;margin-top:4px}
+  .phase-card small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+  .game-card{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.035);
+    padding:8px;
+    border-radius:18px;
+  }
+  canvas{
+    display:block;
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:12px;
+    background:var(--navy);
+    touch-action:none;
+  }
+  .message{
+    text-align:center;
+    min-height:24px;
+    margin:12px 0 8px;
+    font-weight:700;
+    font-size:14px;
+  }
+  .actions{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  button{
+    border:0;
+    border-radius:12px;
+    min-height:48px;
+    padding:0 16px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    color:#fff;
+    background:#173650;
+    touch-action:manipulation;
+  }
+  button.primary{
+    background:var(--orange);
+    color:#101820;
+  }
+  button:active{
+    transform:scale(.98);
+  }
+  .pad{
+    width:188px;
+    margin:14px auto 0;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+  }
+  .pad button{
+    min-width:0;
+    height:54px;
+    padding:0;
+    font-size:23px;
+    background:#102c43;
+    border:1px solid var(--line);
+  }
+  .hint{
+    margin-top:10px;
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.35;
+  }
+  .legend{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:12px;
+    font-size:13px;
+    color:#c7d2dc;
+  }
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.72);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:10;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    width:min(390px,100%);
+    background:#0b2236;
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:22px;
+    text-align:center;
+  }
+  .modal h2{margin:0 0 8px}
+  .modal p{color:#c8d3dc}
+  .modal button{width:100%;margin-top:8px}
+  @media(max-width:520px){
+    body{padding:8px}
+    .top{display:block}
+    .stats{margin-top:10px}
+    .stat{flex:1}
+    .game-card{padding:6px}
+    .actions button{flex:1 1 140px}
+    .pad{width:204px}
+    .pad button{height:58px}
+    .phase-selector{gap:5px}
+    .phase-card{padding:8px 3px}
+    .phase-card b{font-size:11px}
+    .phase-card small{font-size:9px}
+  }
+
+/* DEMOSTRACIÓN INTERACTIVA SIN VIDEO */
+.cwModal video{display:none!important}
+.cwDemoStage{height:210px;border-radius:12px;background:linear-gradient(180deg,#07182d,#0d2747);border:1px solid #2f5e8c;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;padding:18px;color:#fff}
+.cwDemoCard{width:min(520px,94%);text-align:center;animation:cwPop .35s ease}
+.cwDemoStep{font-size:13px;letter-spacing:.08em;font-weight:900;color:#66aaff;margin-bottom:12px}
+.cwDemoVisual{font-size:clamp(28px,7vw,52px);font-weight:900;min-height:70px;display:flex;align-items:center;justify-content:center;gap:8px}
+.cwDemoText{font-size:14px;color:#d6e5f5;margin-top:10px;line-height:1.35}
+.cwFakeInput{display:inline-block;background:#fff;color:#10233d;border-radius:8px;padding:10px 18px;font-size:18px;letter-spacing:.05em;border:2px solid #4e9cff}
+.cwDemoDots{display:flex;gap:6px;justify-content:center;margin-top:14px}.cwDemoDot{width:7px;height:7px;border-radius:50%;background:#49617c}.cwDemoDot.on{background:#4e9cff;transform:scale(1.25)}
+@keyframes cwPop{from{opacity:.15;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.cwRankName{color:#fff!important;font-weight:800!important}
+@media(max-width:600px){.cwDemoStage{height:190px;padding:12px}.cwDemoText{font-size:12px}.cwDemoStep{font-size:11px}}
+</style>
+
+<style id="cwExtrasCss">
+#cwDemoBtn{
+  min-height:44px;padding:10px 14px;border-radius:12px;border:1px solid #56a3ff;
+  background:#0a2347;color:#fff;font-weight:900;cursor:pointer
+}
+#cwDemoBtn{width:100%;margin:10px 0}
+#cwDemoOverlay{position:fixed;inset:0;z-index:9999;background:rgba(2,10,22,.9);display:none;align-items:center;justify-content:center;padding:16px}
+#cwDemoOverlay.show{display:flex}
+.cwModal{width:min(720px,100%);max-height:90vh;overflow:auto;background:#071d37;border:1px solid #49617c;border-radius:18px;padding:16px;color:#fff}
+.cwModal h2{margin:0 0 12px;color:#56a3ff}
+.cwModal video{display:block;width:100%;max-height:66vh;border-radius:12px;background:#000}
+.cwClose{width:100%;min-height:44px;margin-top:12px;border:0;border-radius:12px;background:#1266c3;color:#fff;font-weight:900;cursor:pointer}
+.cwNote{color:#c7d4e3;font-size:13px;margin:10px 0 0}
+#cwRankList{display:grid;gap:8px;margin-top:10px}
+.cwRankRow{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:10px;border-radius:12px;background:#0a2347;border:1px solid #355675}
+.cwRankPos{font-weight:900;font-size:18px;text-align:center;color:#56a3ff}
+.cwRankName{font-weight:800;color:#fff!important}.cwRankSub{font-size:12px;color:#c7d4e3;margin-top:2px}
+.cwRankVal{text-align:right;font-weight:900;color:#fff!important}.cwLive{font-size:10px;color:#9fd0ff}
+#cwMyPos{margin:10px 0;padding:9px;border-radius:10px;background:#09223f;color:#fff;font-weight:800;text-align:center}
+@media(max-width:600px){.cwRankRow{grid-template-columns:30px 1fr;gap:7px}.cwRankVal{grid-column:2;font-size:11px}.cwLiveRank{padding:12px}.cwLiveRank h2{font-size:17px}}
+</style>
+
+
+<style id="cargoGameRedesign">
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+:root{
+  --cw-bg:#020a16;--cw-panel:#071a30;--cw-panel2:#092542;--cw-blue:#1677ff;
+  --cw-cyan:#56c8ff;--cw-silver:#c7d6e5;--cw-white:#f7fbff;--cw-grid:rgba(70,164,255,.12);
+}
+html,body{background:
+ radial-gradient(circle at 50% -10%,rgba(24,111,216,.28),transparent 34%),
+ linear-gradient(180deg,#020713 0%,#041326 50%,#020813 100%)!important;
+ min-height:100%;}
+body{font-family:'Rajdhani',Arial,sans-serif!important;padding:18px!important;overflow-x:hidden;}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.28;
+ background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+ background-size:34px 34px;mask-image:linear-gradient(to bottom,#000,transparent 88%)}
+.app{width:min(860px,100%)!important;position:relative;}
+.app:before{content:"CARGO WEEK // ARCADE MODE";display:block;width:max-content;max-width:100%;margin:0 auto 14px;padding:7px 18px;
+ border:1px solid rgba(86,200,255,.55);border-radius:999px;color:#9bdcff;background:rgba(8,32,61,.82);font-family:'Orbitron',sans-serif;
+ font-size:10px;letter-spacing:.24em;box-shadow:0 0 24px rgba(48,143,255,.13),inset 0 0 16px rgba(61,167,255,.05)}
+.top{padding:20px!important;border:1px solid rgba(95,171,255,.27);border-radius:22px;background:linear-gradient(135deg,rgba(11,39,73,.97),rgba(5,19,37,.96));
+ box-shadow:0 18px 60px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.05);position:relative;overflow:hidden;margin-bottom:14px!important}
+.top:after{content:"";position:absolute;right:-65px;top:-85px;width:270px;height:270px;border:1px solid rgba(70,171,255,.11);border-radius:50%;box-shadow:0 0 0 28px rgba(70,171,255,.025),0 0 0 58px rgba(70,171,255,.018)}
+h1{font-family:'Orbitron',sans-serif!important;font-size:clamp(28px,7vw,48px)!important;line-height:1!important;letter-spacing:.04em!important;text-transform:uppercase;
+ text-shadow:0 0 18px rgba(43,151,255,.35)}
+.subtitle{font-size:15px!important;color:#b9d5ed!important;margin-top:9px!important;max-width:560px;}
+#playerName,#branch{height:48px!important;border:1px solid rgba(104,180,255,.32)!important;border-radius:12px!important;background:rgba(1,12,26,.72)!important;color:#fff!important;
+ font-family:'Rajdhani',sans-serif!important;font-size:16px!important;outline:none;box-shadow:inset 0 0 18px rgba(33,118,211,.05)}
+#playerName:focus,#branch:focus{border-color:#54bfff!important;box-shadow:0 0 0 3px rgba(44,156,255,.12),0 0 24px rgba(48,148,255,.12)!important}
+.stats{position:relative;z-index:1;gap:9px!important}.stat{min-width:105px!important;padding:11px 12px!important;border-radius:13px!important;
+ border:1px solid rgba(111,181,255,.25)!important;background:linear-gradient(180deg,rgba(15,49,87,.85),rgba(7,29,54,.92))!important;color:#9fc6e8!important;
+ font-size:12px!important;text-transform:uppercase;letter-spacing:.09em;box-shadow:inset 0 1px rgba(255,255,255,.04)}
+.stat strong{display:block;color:#fff;font-family:'Orbitron',sans-serif;font-size:20px;margin-top:2px;text-shadow:0 0 14px rgba(75,174,255,.35)}
+.phase-selector{gap:10px!important;margin:13px 0!important}.phase-card{position:relative;overflow:hidden;border-radius:13px!important;padding:11px!important;
+ border:1px solid rgba(102,174,242,.2)!important;background:linear-gradient(180deg,rgba(10,35,64,.85),rgba(5,20,38,.9))!important;text-transform:uppercase;letter-spacing:.08em}
+.phase-card.active{border-color:#55bdff!important;background:linear-gradient(180deg,rgba(18,72,127,.9),rgba(8,37,70,.95))!important;box-shadow:0 0 22px rgba(37,147,255,.17),inset 0 0 18px rgba(37,147,255,.08)}
+.phase-card.active:after{content:"ONLINE";position:absolute;right:8px;top:7px;font:700 8px 'Orbitron';color:#70d0ff}
+.phase-card.locked{filter:grayscale(.35);opacity:.48!important}.phase-card .lock{font-size:16px!important}.phase-card b{font-family:'Orbitron',sans-serif;font-size:12px!important}
+.game-card{padding:12px!important;border-radius:22px!important;border:1px solid rgba(83,171,255,.3)!important;background:linear-gradient(145deg,rgba(11,42,77,.94),rgba(3,15,30,.96))!important;
+ box-shadow:0 22px 80px rgba(0,0,0,.38),0 0 34px rgba(31,124,225,.09);position:relative}
+.game-card:before{content:"LIVE ROUTE // CARGO GRID";display:block;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:.18em;color:#70caff;margin:0 0 9px 4px}
+canvas{border-radius:15px!important;background:#031326!important;border:1px solid rgba(100,185,255,.2);box-shadow:inset 0 0 45px rgba(0,0,0,.5),0 0 30px rgba(20,115,220,.07)}
+.message{margin:12px auto 9px!important;padding:10px 14px;min-height:42px!important;display:flex;align-items:center;justify-content:center;max-width:700px;
+ border:1px solid rgba(73,159,242,.18);border-radius:12px;background:rgba(5,24,45,.74);color:#d7edff;font-size:14px!important;letter-spacing:.025em}
+.actions{gap:10px!important}.actions button,#cwDemoBtn,.cwClose{font-family:'Orbitron',sans-serif!important;letter-spacing:.06em!important;text-transform:uppercase!important}
+button{border-radius:11px!important;border:1px solid rgba(103,174,242,.25)!important;background:linear-gradient(180deg,#113b64,#092642)!important;box-shadow:inset 0 1px rgba(255,255,255,.08),0 8px 20px rgba(0,0,0,.2);transition:.16s ease}
+button:hover{transform:translateY(-1px);filter:brightness(1.12);box-shadow:0 0 20px rgba(38,139,240,.17),0 8px 22px rgba(0,0,0,.25)}
+button.primary{background:linear-gradient(180deg,#278cff,#1267d1)!important;color:#fff!important;border-color:#55b9ff!important;box-shadow:0 0 25px rgba(29,130,241,.23),inset 0 1px rgba(255,255,255,.2)!important}
+.pad{width:218px!important;gap:9px!important}.pad button{height:62px!important;border-radius:14px!important;font-size:25px!important;background:linear-gradient(180deg,#0e365f,#08223e)!important;color:#bce5ff!important;
+ box-shadow:inset 0 0 14px rgba(68,168,255,.06),0 6px 14px rgba(0,0,0,.18)}
+.hint{max-width:680px;margin:13px auto 0!important;color:#8eabc4!important}.legend{font-weight:700;color:#b9d5eb!important;letter-spacing:.04em}.legend span{padding:7px 10px;border-radius:10px;background:rgba(8,33,61,.72);border:1px solid rgba(94,173,245,.15)}
+#cwDemoBtn{background:linear-gradient(90deg,#0e3157,#145a96)!important;border:1px solid #4ba8ff!important;box-shadow:0 0 20px rgba(47,147,239,.12)!important}
+#cwDemoOverlay,.overlay{backdrop-filter:blur(10px)}.cwModal,.modal{background:linear-gradient(145deg,#071d37,#041326)!important;border:1px solid rgba(87,174,255,.38)!important;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 35px rgba(45,143,235,.11)!important}
+.cwModal h2,.modal h2{font-family:'Orbitron',sans-serif!important;text-transform:uppercase;letter-spacing:.06em}.cwDemoStage{background:radial-gradient(circle at 50% 20%,#123e72,#06162a 65%)!important;border-color:rgba(80,166,255,.4)!important}
+#cwLiveRank{margin-top:18px;padding:16px;border-radius:20px;border:1px solid rgba(79,165,244,.28);background:linear-gradient(145deg,rgba(8,31,57,.96),rgba(4,17,32,.97));box-shadow:0 18px 55px rgba(0,0,0,.28)}
+.cwRankHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.cwRankHead h2{font-family:'Orbitron',sans-serif;font-size:18px;margin:0;color:#fff;letter-spacing:.05em}.cwRankStatus{font:700 9px 'Orbitron';letter-spacing:.11em;color:#67ccff}.cwPulse{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:#64d1ff;box-shadow:0 0 11px #64d1ff;animation:cwPulse 1.1s infinite alternate}@keyframes cwPulse{to{opacity:.35}}
+#cwMyPos{background:linear-gradient(90deg,rgba(18,78,132,.65),rgba(8,36,65,.8))!important;border:1px solid rgba(76,168,252,.19)}
+.cwRankRow{background:linear-gradient(90deg,rgba(10,45,82,.92),rgba(7,28,51,.92))!important;border-color:rgba(93,169,239,.18)!important;box-shadow:inset 0 1px rgba(255,255,255,.025)}
+.cwRankPos{font-family:'Orbitron',sans-serif;color:#75cfff!important}.cwRankVal{font-family:'Orbitron',sans-serif;font-size:12px}.cwLive{color:#6bd3ff!important}
+@media(max-width:600px){body{padding:8px!important}.top{padding:14px!important;border-radius:17px}.top:after{display:none}.stats{display:grid!important;grid-template-columns:repeat(3,1fr)}.stat{min-width:0!important;padding:9px 5px!important}.stat strong{font-size:17px}.game-card{padding:8px!important}.pad{width:210px!important}.cwRankHead h2{font-size:15px}.app:before{font-size:8px;padding:6px 11px;letter-spacing:.16em}}
+</style>
+
+
+<style id="cwSideRankCss">
+@media (min-width: 1050px){
+  body{padding:20px;}
+  .app{width:min(1320px,100%); padding-right:390px; position:relative;}
+  #cwLiveRank{position:absolute; top:0; right:0; width:360px; margin:0!important; max-height:calc(100vh - 40px); overflow:auto; position:absolute;}
+  .game-card{max-width:760px;}
+}
+@media (max-width:1049px){
+  #cwLiveRank{position:static!important; width:auto!important; max-height:none!important; margin-top:18px!important;}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app" tabindex="0">
+  <div class="top">
+    <div>
+      <h1 id="heroTitle">RUTA CARGO 🚚</h1>
+      <div class="subtitle" id="heroSubtitle">Recoge cajas y completa tu ruta.<br><b>🔓 Juego abierto siempre · 🎟️ 2 oportunidades totales por participante · 🔒 Validación por nombre + sucursal</b></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><input id="playerName" placeholder="Nombre completo" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#0b2236;color:white;flex:1;min-width:180px"><select id="branch" required style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#0b2236;color:white;flex:1;min-width:140px">
+<option value="">Selecciona tu sucursal</option>
+<option>Estado de México</option>
+<option>Buenos Aires</option>
+<option>Victoria</option>
+<option>Nuevo Repueblo</option>
+<option>Leamington</option>
+<option>Tampico</option>
+<option>Ontario</option>
+<option>Detroit</option>
+<option>San Antonio</option>
+<option>Laredo</option>
+</select></div>
+    </div>
+    <div class="stats">
+      <div class="stat">📦 Cajas<br><strong id="score">0</strong></div>
+      <div class="stat">⭐ Récord<br><strong id="best">0</strong></div>
+      <div class="stat">🎟️ Intentos<br><strong id="attempts">2 / 2</strong></div>
+    </div>
+  </div>
+
+  <div class="phase-selector" id="phaseSelector"></div>
+
+  <div class="game-card">
+    <canvas id="game" width="600" height="600"></canvas>
+  </div>
+
+  <div class="message" id="message">Presiona INICIAR para comenzar.</div>
+
+  <div class="actions">
+    <button class="primary" id="start">INICIAR / REINICIAR</button>
+    <button id="pause">PAUSA</button>
+  </div>
+
+  <div class="pad" aria-label="Controles">
+    <span></span>
+    <button data-dir="up">▲</button>
+    <span></span>
+    <button data-dir="left">◀</button>
+    <button data-dir="down">▼</button>
+    <button data-dir="right">▶</button>
+  </div>
+
+  <div class="hint">En celular puedes usar los botones o deslizar el dedo sobre el tablero.<br><b>Importante:</b> solo tienes 2 oportunidades en total. Si las usas, no podrás volver a participar aunque recargues, cambies de navegador o uses otro dispositivo.</div>
+  <div class="legend">
+    <span>🚚 Camión</span>
+    <span>📦 Caja</span>
+    <span>🟧 Carga acumulada</span>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>🚨 Ruta bloqueada</h2>
+    <p id="finalText">Terminaste la partida.</p>
+    <button class="primary" id="again">VOLVER A JUGAR</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  /* ============================================================
+     CAMBIA SOLO ESTE NÚMERO EN GITHUB:
+     1 = FASE 1
+     2 = FASE 2
+     ============================================================ */
+  const FASE_ACTIVA = 1;
+
+  const FASES = {
+    1:{
+      titulo:"RUTA CARGO · FASE 1 🚚",
+      subtitulo:"Fase 1: recoge cajas y aumenta tu carga.",
+      grid:18,
+      velocidad:155,
+      velocidadMin:80,
+      aceleracion:3,
+      obstaculos:0,
+      mensaje:"¡Fase 1! Recoge todas las cajas que puedas 📦"
+    },
+    2:{
+      titulo:"RUTA CARGO · FASE 2 🚚",
+      subtitulo:"Fase 2: recoge cajas, aumenta tu carga y esquiva obstáculos.",
+      grid:20,
+      velocidad:125,
+      velocidadMin:58,
+      aceleracion:4,
+      obstaculos:12,
+      mensaje:"¡Fase 2! Recoge las cajas y evita los conos 🚧"
+    }
+  };
+  const CFG = FASES[FASE_ACTIVA];
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const attemptsEl = document.getElementById("attempts");
+  const message = document.getElementById("message");
+  const overlay = document.getElementById("overlay");
+  const finalText = document.getElementById("finalText");
+  const startBtn = document.getElementById("start");
+  const pauseBtn = document.getElementById("pause");
+  const againBtn = document.getElementById("again");
+  const app = document.getElementById("app");
+  const playerName = document.getElementById("playerName");
+  const branch = document.getElementById("branch");
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz2TfGOW-n8WMDmMJzLbKegXSFATVymeAm9fHqOJNAglGqcz7lOMZIgZkjP4fXJYpof/exec";
+  let submitted = false;
+  let waitingForFirstMove = true;
+  const MAX_ATTEMPTS = 2;
+  let currentPlayerKey = "";
+
+  // ============================================================
+  // VALIDACIÓN GLOBAL DE INTENTOS EN GOOGLE SHEETS
+  // Cuenta 2 oportunidades TOTALES por nombre + sucursal,
+  // incluso si cambia de navegador, celular o computadora.
+  // ============================================================
+  function validarYConsumirIntentoServidor(nombre, sucursal){
+    return new Promise((resolve, reject)=>{
+      const cb = "cwAttemptCb_" + Date.now() + "_" + Math.floor(Math.random()*100000);
+      const script = document.createElement("script");
+      let finished = false;
+
+      const cleanup = ()=>{
+        try{ delete window[cb]; }catch(_){}
+        script.remove();
+      };
+
+      const timeout = setTimeout(()=>{
+        if(finished) return;
+        finished = true;
+        cleanup();
+        reject(new Error("Tiempo de validación agotado"));
+      }, 10000);
+
+      window[cb] = (data)=>{
+        if(finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        cleanup();
+        resolve(data || {});
+      };
+
+      script.src = WEB_APP_URL
+        + "?action=usarIntento"
+        + "&juego=" + encodeURIComponent("Ruta Cargo")
+        + "&nombre=" + encodeURIComponent(nombre)
+        + "&sucursal=" + encodeURIComponent(sucursal)
+        + "&fase=" + encodeURIComponent("Fase " + FASE_ACTIVA)
+        + "&callback=" + encodeURIComponent(cb)
+        + "&_=" + Date.now();
+
+      script.onerror = ()=>{
+        if(finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        cleanup();
+        reject(new Error("No se pudo conectar con Google Sheets"));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  async function consultarIntentosServidor(nombre, sucursal){
+    return new Promise((resolve, reject)=>{
+      const cb = "cwCheckCb_" + Date.now() + "_" + Math.floor(Math.random()*100000);
+      const script = document.createElement("script");
+      let finished = false;
+
+      const cleanup = ()=>{
+        try{ delete window[cb]; }catch(_){}
+        script.remove();
+      };
+
+      const timeout = setTimeout(()=>{
+        if(finished) return;
+        finished = true;
+        cleanup();
+        reject(new Error("Tiempo de validación agotado"));
+      }, 10000);
+
+      window[cb] = (data)=>{
+        if(finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        cleanup();
+        resolve(data || {});
+      };
+
+      script.src = WEB_APP_URL
+        + "?action=consultarIntentos"
+        + "&juego=" + encodeURIComponent("Ruta Cargo")
+        + "&nombre=" + encodeURIComponent(nombre)
+        + "&sucursal=" + encodeURIComponent(sucursal)
+        + "&callback=" + encodeURIComponent(cb)
+        + "&_=" + Date.now();
+
+      script.onerror = ()=>{
+        if(finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        cleanup();
+        reject(new Error("No se pudo conectar con Google Sheets"));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  function normalizarParticipante(s){
+    return String(s||"")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+
+  function playerKey(){
+    return "rutaCargoDosFasesAttempts::" +
+      normalizarParticipante(playerName.value) + "::" +
+      normalizarParticipante(branch.value);
+  }
+  function attemptsUsed(){
+    const key = playerKey();
+    return Number(localStorage.getItem(key) || 0);
+  }
+  function updateAttempts(){
+    const used = attemptsUsed();
+    attemptsEl.textContent = Math.max(0, MAX_ATTEMPTS-used) + " / " + MAX_ATTEMPTS;
+    if(used >= MAX_ATTEMPTS){
+      startBtn.disabled = true;
+      againBtn.disabled = true;
+      startBtn.textContent = "SIN MÁS OPORTUNIDADES";
+      message.textContent = "🔒 Ya utilizaste tus 2 oportunidades. No podrás volver a jugar aunque recargues la página.";
+    } else {
+      startBtn.disabled = false;
+      againBtn.disabled = false;
+      startBtn.textContent = "INICIAR / REINICIAR";
+    }
+  }
+  let checkTimer = null;
+  async function syncAttemptsFromServer(){
+    const n = playerName.value.trim();
+    const s = branch.value.trim();
+    if(!n || !s){ updateAttempts(); return; }
+
+    clearTimeout(checkTimer);
+    checkTimer = setTimeout(async()=>{
+      try{
+        const data = await consultarIntentosServidor(n,s);
+        if(data && data.ok !== false){
+          const usados = Math.min(MAX_ATTEMPTS, Number(data.usados || 0));
+          localStorage.setItem(playerKey(), String(usados));
+          updateAttempts();
+          if(usados >= MAX_ATTEMPTS){
+            message.textContent = "🔒 Ya utilizaste tus 2 oportunidades. Este participante ya no puede volver a jugar.";
+          }
+        }
+      }catch(_){
+        updateAttempts();
+      }
+    }, 350);
+  }
+
+  playerName.addEventListener("input", syncAttemptsFromServer);
+  branch.addEventListener("change", syncAttemptsFromServer);
+
+  window.addEventListener("pageshow", ()=>{
+    updateAttempts();
+    syncAttemptsFromServer();
+  });
+
+  function guardarResultado(){
+    if(submitted || !playerName.value.trim()) return;
+    submitted = true;
+    fetch(WEB_APP_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({nombre:playerName.value.trim(),sucursal:branch.value.trim(),puntos:score,valor:score,fase:"Fase "+FASE_ACTIVA,juego:"Ruta Cargo",tipo:"final",detalle:score+" cajas"})}).catch(()=>{});
+  }
+
+  const GRID = CFG.grid;
+  const SIZE = canvas.width / GRID;
+
+  let truck = [];
+  let box = {x:12,y:8};
+  let dir = {x:1,y:0};
+  let nextDir = {x:1,y:0};
+  let score = 0;
+  let best = 0;
+  let obstacles = [];
+  let running = false;
+  let paused = false;
+  let timer = null;
+  let speed = CFG.velocidad;
+
+  function stopTimer(){
+    if(timer){
+      clearTimeout(timer);
+      timer = null;
+    }
+  }
+
+  async function startGame(){
+    if(!playerName.value.trim()){
+      alert("Escribe tu nombre completo antes de comenzar.");
+      playerName.focus();
+      return;
+    }
+    if(playerName.value.trim().split(/\s+/).length < 2){
+      alert("Escribe tu nombre completo para poder identificarte.");
+      playerName.focus();
+      return;
+    }
+    if(!branch.value.trim()){
+      alert("Selecciona tu sucursal antes de comenzar.");
+      branch.focus();
+      return;
+    }
+
+    startBtn.disabled = true;
+    againBtn.disabled = true;
+    startBtn.textContent = "VALIDANDO...";
+    message.textContent = "🔎 Validando tus oportunidades en Google Sheets...";
+
+    try{
+      const data = await validarYConsumirIntentoServidor(
+        playerName.value.trim(),
+        branch.value.trim()
+      );
+
+      if(data.ok === false){
+        throw new Error(data.mensaje || "No se pudo validar.");
+      }
+
+      const usadosServidor = Number(data.usados || 0);
+      const restantesServidor = Number(
+        data.restantes != null ? data.restantes : Math.max(0, MAX_ATTEMPTS-usadosServidor)
+      );
+
+      if(data.permitido === false || usadosServidor > MAX_ATTEMPTS || restantesServidor < 0){
+        localStorage.setItem(playerKey(), String(MAX_ATTEMPTS));
+        updateAttempts();
+        startBtn.textContent = "SIN MÁS OPORTUNIDADES";
+        message.textContent = "🔒 Ya utilizaste tus 2 oportunidades. No puedes volver a participar aunque cambies de navegador o dispositivo.";
+        alert("Ya utilizaste tus 2 oportunidades de Ruta Cargo.");
+        return;
+      }
+
+      // Sincroniza el contador local con el servidor.
+      localStorage.setItem(playerKey(), String(Math.min(MAX_ATTEMPTS, usadosServidor)));
+      currentPlayerKey = playerKey();
+      updateAttempts();
+
+      submitted = false;
+      stopTimer();
+      overlay.classList.remove("show");
+      truck = [
+        {x:5,y:9},
+        {x:4,y:9},
+        {x:3,y:9}
+      ];
+      dir = {x:1,y:0};
+      nextDir = {x:1,y:0};
+      score = 0;
+      speed = CFG.velocidad;
+      running = true;
+      paused = false;
+      waitingForFirstMove = true;
+      scoreEl.textContent = "0";
+      pauseBtn.textContent = "PAUSA";
+      makeObstacles(CFG.obstaculos);
+      placeBox();
+      draw();
+
+      attemptsEl.textContent = restantesServidor + " / " + MAX_ATTEMPTS;
+      message.textContent = "Intento " + usadosServidor + " de " + MAX_ATTEMPTS + " · Elige una dirección para comenzar 🚚";
+
+    }catch(err){
+      startBtn.disabled = false;
+      againBtn.disabled = false;
+      startBtn.textContent = "INICIAR / REINICIAR";
+      message.textContent = "⚠️ No se pudo validar tu participación. Revisa tu conexión e inténtalo de nuevo.";
+      alert("No se pudo validar tu participación. No se consumió ningún intento.");
+    }
+  }
+
+  function makeObstacles(n){
+    obstacles=[];
+    while(obstacles.length<n){
+      const p={x:Math.floor(Math.random()*GRID),y:Math.floor(Math.random()*GRID)};
+      const nearStart=(p.x>=2&&p.x<=8&&p.y>=Math.floor(GRID*.35)&&p.y<=Math.floor(GRID*.60));
+      if(!nearStart && !obstacles.some(o=>o.x===p.x&&o.y===p.y)) obstacles.push(p);
+    }
+  }
+
+  function placeBox(){
+    let pos;
+    do{
+      pos = {x: Math.floor(Math.random()*GRID), y: Math.floor(Math.random()*GRID)};
+    }while(truck.some(p => p.x===pos.x && p.y===pos.y) || obstacles.some(o=>o.x===pos.x&&o.y===pos.y));
+    box = pos;
+  }
+
+  function schedule(){
+    stopTimer();
+    if(running && !paused){
+      timer = setTimeout(step, speed);
+    }
+  }
+
+  function step(){
+    dir = nextDir;
+    const head = truck[0];
+    const next = {
+      x: head.x + dir.x,
+      y: head.y + dir.y
+    };
+
+    const hitWall =
+      next.x < 0 || next.y < 0 ||
+      next.x >= GRID || next.y >= GRID;
+
+    const willGrow = next.x===box.x && next.y===box.y;
+    const bodyToCheck = willGrow ? truck : truck.slice(0,-1);
+    const hitSelf = bodyToCheck.some(p => p.x===next.x && p.y===next.y);
+    const hitObstacle = obstacles.some(o => o.x===next.x && o.y===next.y);
+
+    if(hitWall || hitSelf || hitObstacle){
+      endGame();
+      return;
+    }
+
+    truck.unshift(next);
+
+    if(willGrow){
+      score++;
+      scoreEl.textContent = score;
+
+      if(score > best){
+        best = score;
+        bestEl.textContent = best;
+      }
+
+      speed = Math.max(CFG.velocidadMin, CFG.velocidad - score*CFG.aceleracion);
+      placeBox();
+    }else{
+      truck.pop();
+    }
+
+    draw();
+    schedule();
+  }
+
+  function endGame(){
+    running = false;
+    guardarResultado();
+    stopTimer();
+    draw(true);
+    const remaining = Math.max(0, MAX_ATTEMPTS - attemptsUsed());
+    finalText.textContent =
+      "Recogiste " + score + (score===1 ? " caja. " : " cajas. ") +
+      (remaining > 0 ? "Te " + (remaining===1 ? "queda 1 oportunidad." : "quedan " + remaining + " oportunidades.") : "Ya utilizaste tus 2 oportunidades. Este navegador queda bloqueado.");
+    againBtn.textContent = remaining > 0 ? "VOLVER A JUGAR" : "SIN MÁS OPORTUNIDADES";
+    againBtn.disabled = remaining <= 0;
+    overlay.classList.add("show");
+    message.textContent = "Partida terminada.";
+  }
+
+  function setDirection(name){
+    const map = {
+      up:{x:0,y:-1},
+      down:{x:0,y:1},
+      left:{x:-1,y:0},
+      right:{x:1,y:0}
+    };
+    const d = map[name];
+    if(!d || !running || paused) return;
+
+    if(waitingForFirstMove){
+      dir=d;
+      nextDir=d;
+      waitingForFirstMove=false;
+      message.textContent="¡Entrega en proceso! Recoge las cajas 📦";
+      schedule();
+      return;
+    }
+
+    // Evita reversas rápidas de 180° entre movimientos.
+    if(d.x === -nextDir.x && d.y === -nextDir.y) return;
+    if(d.x === -dir.x && d.y === -dir.y) return;
+    nextDir=d;
+  }
+
+  function draw(gameOver=false){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const bg=ctx.createLinearGradient(0,0,0,canvas.height);
+    bg.addColorStop(0,"#061a31"); bg.addColorStop(1,"#020b16");
+    ctx.fillStyle=bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+    const glow=ctx.createRadialGradient(canvas.width*.5,canvas.height*.35,20,canvas.width*.5,canvas.height*.35,canvas.width*.7);
+    glow.addColorStop(0,"rgba(27,119,222,.12)"); glow.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=glow; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.strokeStyle = "rgba(74,165,255,.10)";
+    ctx.lineWidth = 1;
+
+    for(let i=1;i<GRID;i++){
+      ctx.beginPath();
+      ctx.moveTo(i*SIZE,0);
+      ctx.lineTo(i*SIZE,canvas.height);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0,i*SIZE);
+      ctx.lineTo(canvas.width,i*SIZE);
+      ctx.stroke();
+    }
+
+    obstacles.forEach(o=>{
+      const x=o.x*SIZE, y=o.y*SIZE;
+      ctx.font=(SIZE*0.70)+"px Arial";
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillText("🚧",x+SIZE/2,y+SIZE/2);
+    });
+
+    ctx.font = `${SIZE*.66}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+      "📦",
+      box.x*SIZE + SIZE/2,
+      box.y*SIZE + SIZE/2
+    );
+
+    truck.forEach((p,i)=>{
+      if(i===0){
+        ctx.save();
+        ctx.translate(
+          p.x*SIZE + SIZE/2,
+          p.y*SIZE + SIZE/2
+        );
+
+        let angle = 0;
+        if(dir.x===-1) angle = Math.PI;
+        if(dir.y===1) angle = Math.PI/2;
+        if(dir.y===-1) angle = -Math.PI/2;
+
+        ctx.rotate(angle);
+        ctx.scale(-1,1);
+        ctx.font = `${SIZE*.70}px Arial`;
+        ctx.fillText("🚚",0,0);
+        ctx.restore();
+      }else{
+        ctx.fillStyle = i%2 ? "#207ff0" : "#78c9ff";
+        ctx.beginPath();
+        ctx.roundRect(
+          p.x*SIZE+4,
+          p.y*SIZE+4,
+          SIZE-8,
+          SIZE-8,
+          7
+        );
+        ctx.fill();
+
+        ctx.font = `${SIZE*.42}px Arial`;
+        ctx.fillText(
+          "📦",
+          p.x*SIZE + SIZE/2,
+          p.y*SIZE + SIZE/2
+        );
+      }
+    });
+
+    if(gameOver){
+      ctx.fillStyle = "rgba(0,0,0,.28)";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+  }
+
+  startBtn.addEventListener("click",startGame);
+  againBtn.addEventListener("click",startGame);
+
+  pauseBtn.addEventListener("click",()=>{
+    if(!running) return;
+
+    paused = !paused;
+    pauseBtn.textContent = paused ? "CONTINUAR" : "PAUSA";
+
+    if(paused){
+      stopTimer();
+      message.textContent = "⏸️ Juego en pausa.";
+    }else{
+      message.textContent = "¡Entrega en proceso! Recoge las cajas 📦";
+      schedule();
+    }
+  });
+
+  document.querySelectorAll("[data-dir]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      setDirection(btn.dataset.dir);
+    });
+  });
+
+  app.addEventListener("keydown",e=>{
+    const keyMap = {
+      ArrowUp:"up",
+      ArrowDown:"down",
+      ArrowLeft:"left",
+      ArrowRight:"right"
+    };
+    if(keyMap[e.key]){
+      e.preventDefault();
+      setDirection(keyMap[e.key]);
+    }
+  });
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  canvas.addEventListener("pointerdown",e=>{
+    touchStartX = e.clientX;
+    touchStartY = e.clientY;
+  });
+
+  canvas.addEventListener("pointerup",e=>{
+    const dx = e.clientX - touchStartX;
+    const dy = e.clientY - touchStartY;
+
+    if(Math.max(Math.abs(dx),Math.abs(dy)) < 18) return;
+
+    if(Math.abs(dx) > Math.abs(dy)){
+      setDirection(dx > 0 ? "right" : "left");
+    }else{
+      setDirection(dy > 0 ? "down" : "up");
+    }
+  });
+
+  function paintPhases(){
+    document.getElementById("phaseSelector").innerHTML=[1,2].map(n=>{
+      const active=n===FASE_ACTIVA;
+      return `<div class="phase-card ${active?"active":"locked"}">
+        <div class="lock">${active?"🔓":"🔒"}</div>
+        <b>FASE ${n}</b>
+        <small>${active?"DISPONIBLE":"BLOQUEADA"}</small>
+      </div>`;
+    }).join("");
+  }
+
+  document.getElementById("heroTitle").textContent=CFG.titulo;
+  document.getElementById("heroSubtitle").textContent=CFG.subtitulo;
+  paintPhases();
+  updateAttempts();
+  draw();
+})();
+</script>
+
+<script id="cwExtrasJs">
+(()=>{
+ const CW_URL="https://script.google.com/macros/s/AKfycbz2TfGOW-n8WMDmMJzLbKegXSFATVymeAm9fHqOJNAglGqcz7lOMZIgZkjP4fXJYpof/exec";
+ function cwPhase(){
+   const m=(document.body.innerText.match(/FASE\s+(\d)/i)||[])[1];
+   return Number(m||1);
+ }
+ 
+function cwProgress(){
+ const name=(document.querySelector('#playerName')?.value||'').trim(), branch=document.querySelector('#branch')?.value||'';
+ if(!name||!branch) return null;
+ const pts=Number(document.querySelector('#score')?.textContent||0);
+ return {nombre:name,sucursal:branch,fase:'Fase '+cwPhase(),valor:pts,detalle:pts+' cajas'};
+}
+
+ const start=document.getElementById('start');
+ if(start){
+   const demoStates=[["🚚 CONTROLA EL CAMIÓN", "🚚  ·  📦", "Muévete por la zona de juego y recoge la carga."], ["📦 RECOGE LAS CAJAS", "🚚📦 ➜ 📦", "Cada caja aumenta tu progreso."], ["⚠️ EVITA CHOCAR", "🚚 ↗️  ⛔", "Sigue avanzando y consigue la mayor puntuación posible."]];
+   let demoTimer=null, demoIndex=0;
+   const b=document.createElement('button'); b.type='button'; b.id='cwDemoBtn'; b.textContent='▶ VER CÓMO SE JUEGA';
+   start.insertAdjacentElement('beforebegin',b);
+   const o=document.createElement('div'); o.id='cwDemoOverlay';
+   o.innerHTML=`<div class="cwModal"><h2>🎬 ANTES DE EMPEZAR · CÓMO SE JUEGA</h2><div class="cwDemoStage"><div id="cwDemoContent" class="cwDemoCard"></div></div><p class="cwNote"><b>Mira esta demostración antes de iniciar.</b> Se reproduce sola y puedes verla cuantas veces quieras. No inicia el cronómetro, no consume oportunidades y no manda resultados. El juego permanece disponible sin horario.</p><button type="button" class="cwClose" id="cwDemoClose">ENTENDIDO · IR A JUGAR →</button></div>`;
+   document.body.appendChild(o);
+   const content=o.querySelector('#cwDemoContent');
+   function renderDemo(){
+     const d=demoStates[demoIndex];
+     content.className='cwDemoCard'; void content.offsetWidth;
+     content.innerHTML=`<div class="cwDemoStep">${d[0]}</div><div class="cwDemoVisual">${d[1]}</div><div class="cwDemoText">${d[2]}</div><div class="cwDemoDots">${demoStates.map((_,i)=>`<span class="cwDemoDot ${i===demoIndex?'on':''}"></span>`).join('')}</div>`;
+   }
+   function playDemo(){clearInterval(demoTimer);demoIndex=0;renderDemo();demoTimer=setInterval(()=>{demoIndex=(demoIndex+1)%demoStates.length;renderDemo()},2600)}
+   const close=()=>{clearInterval(demoTimer);o.classList.remove('show')};
+   b.addEventListener('click',()=>{o.classList.add('show');playDemo()});
+   o.querySelector('#cwDemoClose').addEventListener('click',close);
+   o.addEventListener('click',e=>{if(e.target===o)close()});
+   setTimeout(()=>{o.classList.add('show');playDemo()},350);
+   window.cwIntroShown=true;
+ }
+ const rankPanel=document.createElement('section'); rankPanel.id='cwLiveRank'; rankPanel.className='cwLiveRank';
+ rankPanel.innerHTML=`<div class="cwRankHead"><h2>🏆 RANKING EN VIVO</h2><div class="cwRankStatus"><span class="cwPulse"></span>ACTUALIZANDO</div></div><div id="cwMyPos" class="cwRankMyPos">Tu posición aparecerá cuando comiences a jugar.</div><div id="cwRankList" class="cwRankList"><div class="cwRankEmpty">Cargando ranking…</div></div><p class="cwNote">Se actualiza aproximadamente cada 8 segundos. “EN JUEGO” indica participantes que todavía no terminan.</p>`;
+ const footer=document.querySelector('.footer');
+ const wrap=document.querySelector('.wrap')||document.body;
+ if(footer&&footer.parentNode){footer.parentNode.insertBefore(rankPanel,footer)}else{wrap.appendChild(rankPanel)};
+
+ let cbn=0;
+ function cwLoadRank(){
+   const cb='cwRankCb'+(++cbn);
+   window[cb]=(data)=>{
+     try{cwRankLoadedOnce=true;cwRender(data)}finally{delete window[cb]; document.getElementById(cb)?.remove();}
+   };
+   const s=document.createElement('script'); s.id=cb;
+   s.src=CW_URL+'?action=ranking&fase='+encodeURIComponent(cwPhase())+'&callback='+cb+'&_='+Date.now();
+   s.onerror=()=>{const mp=document.querySelector('#cwMyPos'); if(mp && !cwRankLoadedOnce) mp.textContent='No se pudo cargar el ranking. Revisa la conexión e inténtalo de nuevo.'; delete window[cb]; s.remove();};
+   document.body.appendChild(s);
+ }
+ function cwRender(data){
+   const rows=(data&&data.ranking)||[], box=document.querySelector('#cwRankList');
+   box.innerHTML='';
+   rows.slice(0,8).forEach((r,i)=>{
+     const el=document.createElement('div'); el.className='cwRankRow';
+     el.innerHTML=`<div class="cwRankPos">${i+1}</div><div><div class="cwRankName">${esc(r.nombre||'Participante')}</div><div class="cwRankSub">${esc(r.sucursal||'')} ${r.estado==='EN JUEGO'?'<span class="cwLive">● EN JUEGO</span>':''}</div></div><div class="cwRankVal">${esc(r.detalle||String(r.valor??''))}</div>`;
+     box.appendChild(el);
+   });
+   if(!rows.length) box.innerHTML='<div class="cwRankEmpty">Todavía no hay participantes registrados en esta fase.</div>';
+   const p=cwProgress(); let pos=0;
+   if(p) pos=rows.findIndex(r=>(r.nombre||'').toLowerCase()===p.nombre.toLowerCase()&&(r.sucursal||'').toLowerCase()===p.sucursal.toLowerCase())+1;
+   document.querySelector('#cwMyPos').textContent=pos?'Tu posición actual: #'+pos:'Tu posición aparecerá cuando comiences a jugar.';
+ }
+ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ function cwSendProgress(){
+   const p=cwProgress(); if(!p)return;
+   p.tipo='progreso';
+   fetch(CW_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)}).catch(()=>{});
+ }
+ setInterval(()=>{cwSendProgress();cwLoadRank()},8000);
+ setTimeout(cwLoadRank,1200);
+})();
+</script>
+
+</body>
+</html>
